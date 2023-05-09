@@ -178,6 +178,9 @@ class SamAutomaticMaskGenerator:
         else:
             mask_data["segmentations"] = mask_data["rles"]
 
+        print(len(mask_data["segmentations"]))
+        pritn(mask_data["objects_embeddings"].shape)
+
         # Write mask records
         curr_anns = []
         for idx in range(len(mask_data["segmentations"])):
@@ -189,6 +192,7 @@ class SamAutomaticMaskGenerator:
                 "point_coords": [mask_data["points"][idx].tolist()],
                 "stability_score": mask_data["stability_score"][idx].item(),
                 "crop_box": box_xyxy_to_xywh(mask_data["crop_boxes"][idx]).tolist(),
+                "object_embedding": mask_data["objects_embeddings"][idx].detach().cpu().numpy()
             }
             curr_anns.append(ann)
 
@@ -276,11 +280,12 @@ class SamAutomaticMaskGenerator:
         transformed_points = self.predictor.transform.apply_coords(points, im_size)
         in_points = torch.as_tensor(transformed_points, device=self.predictor.device)
         in_labels = torch.ones(in_points.shape[0], dtype=torch.int, device=in_points.device)
-        masks, iou_preds, _ = self.predictor.predict_torch(
+        masks, iou_preds, _, objects_embeddings = self.predictor.predict_torch(
             in_points[:, None, :],
             in_labels[:, None],
             multimask_output=True,
             return_logits=True,
+            return_objects_embeddings=True,
         )
 
         # Serialize predictions and store in MaskData
@@ -288,6 +293,7 @@ class SamAutomaticMaskGenerator:
             masks=masks.flatten(0, 1),
             iou_preds=iou_preds.flatten(0, 1),
             points=torch.as_tensor(points.repeat(masks.shape[1], axis=0)),
+            objects_embeddings=objects_embeddings.flatten(0, 1),
         )
         del masks
 

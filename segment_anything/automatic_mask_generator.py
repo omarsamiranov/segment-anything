@@ -179,7 +179,7 @@ class SamAutomaticMaskGenerator:
             mask_data["segmentations"] = mask_data["rles"]
 
         print(len(mask_data["segmentations"]))
-        pritn(mask_data["objects_embeddings"].shape)
+        print(mask_data["objects_embeddings"].shape)
 
         # Write mask records
         curr_anns = []

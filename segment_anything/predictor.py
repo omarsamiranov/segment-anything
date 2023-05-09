@@ -97,6 +97,7 @@ class SamPredictor:
         mask_input: Optional[np.ndarray] = None,
         multimask_output: bool = True,
         return_logits: bool = False,
+        return_objects_embeddings: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Predict masks for the given input prompts, using the currently set image.
@@ -120,6 +121,7 @@ class SamPredictor:
             input prompts, multimask_output=False can give better results.
           return_logits (bool): If true, returns un-thresholded masks logits
             instead of a binary mask.
+          return_objects_embeddings (bool): If true, return the objects embeddings.
 
         Returns:
           (np.ndarray): The output masks in CxHxW format, where C is the
@@ -129,6 +131,8 @@ class SamPredictor:
           (np.ndarray): An array of shape CxHxW, where C is the number
             of masks and H=W=256. These low resolution logits can be passed to
             a subsequent iteration as mask input.
+          (np.ndarray): An array of shape BxCxE where E is the embedding size = 256
+            returned if return_objects_embeddings = True
         """
         if not self.is_image_set:
             raise RuntimeError("An image must be set with .set_image(...) before mask prediction.")
@@ -151,18 +155,29 @@ class SamPredictor:
             mask_input_torch = torch.as_tensor(mask_input, dtype=torch.float, device=self.device)
             mask_input_torch = mask_input_torch[None, :, :, :]
 
-        masks, iou_predictions, low_res_masks = self.predict_torch(
+        predict_torch_outputs = self.predict_torch(
             coords_torch,
             labels_torch,
             box_torch,
             mask_input_torch,
             multimask_output,
             return_logits=return_logits,
+            return_objects_embeddings=return_objects_embeddings,
         )
+
+        if return_objects_embeddings:
+            masks, iou_predictions, low_res_masks, objects_embeddings = predict_torch_outputs
+        else:
+            masks, iou_predictions, low_res_masks = predict_torch_outputs
 
         masks_np = masks[0].detach().cpu().numpy()
         iou_predictions_np = iou_predictions[0].detach().cpu().numpy()
         low_res_masks_np = low_res_masks[0].detach().cpu().numpy()
+
+        if return_objects_embeddings:
+            objects_embeddings = objects_embeddings[0].detach().cpu().numpy()
+            return masks_np, iou_predictions_np, low_res_masks_np, objects_embeddings
+        
         return masks_np, iou_predictions_np, low_res_masks_np
 
     @torch.no_grad()
@@ -174,6 +189,7 @@ class SamPredictor:
         mask_input: Optional[torch.Tensor] = None,
         multimask_output: bool = True,
         return_logits: bool = False,
+        return_objects_embeddings: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Predict masks for the given input prompts, using the currently set image.
@@ -209,6 +225,8 @@ class SamPredictor:
           (torch.Tensor): An array of shape BxCxHxW, where C is the number
             of masks and H=W=256. These low res logits can be passed to
             a subsequent iteration as mask input.
+          (torch.Tensor): An array of shape BxCxE where E is the embedding size = 256
+            returned if return_objects_embeddings = True
         """
         if not self.is_image_set:
             raise RuntimeError("An image must be set with .set_image(...) before mask prediction.")
@@ -226,19 +244,28 @@ class SamPredictor:
         )
 
         # Predict masks
-        low_res_masks, iou_predictions = self.model.mask_decoder(
+        mask_decoder_outputs = self.model.mask_decoder(
             image_embeddings=self.features,
             image_pe=self.model.prompt_encoder.get_dense_pe(),
             sparse_prompt_embeddings=sparse_embeddings,
             dense_prompt_embeddings=dense_embeddings,
             multimask_output=multimask_output,
+            return_objects_embeddings=return_objects_embeddings,
         )
+
+        if return_objects_embeddings:
+          low_res_masks, iou_predictions, objects_embeddings = mask_decoder_outputs
+        else:
+          low_res_masks, iou_predictions = mask_decoder_outputs
 
         # Upscale the masks to the original image resolution
         masks = self.model.postprocess_masks(low_res_masks, self.input_size, self.original_size)
 
         if not return_logits:
             masks = masks > self.model.mask_threshold
+
+        if return_objects_embeddings:
+          return masks, iou_predictions, low_res_masks, objects_embeddings
 
         return masks, iou_predictions, low_res_masks
 

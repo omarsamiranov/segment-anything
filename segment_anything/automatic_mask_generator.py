@@ -178,9 +178,6 @@ class SamAutomaticMaskGenerator:
         else:
             mask_data["segmentations"] = mask_data["rles"]
 
-        print(len(mask_data["segmentations"]))
-        print(mask_data["objects_embeddings"].shape)
-
         # Write mask records
         curr_anns = []
         for idx in range(len(mask_data["segmentations"])):
@@ -192,7 +189,7 @@ class SamAutomaticMaskGenerator:
                 "point_coords": [mask_data["points"][idx].tolist()],
                 "stability_score": mask_data["stability_score"][idx].item(),
                 "crop_box": box_xyxy_to_xywh(mask_data["crop_boxes"][idx]).tolist(),
-                "object_embedding": mask_data["objects_embeddings"][idx].detach().cpu().numpy()
+                "object_embedding": mask_data["objects_embeddings"][idx]
             }
             curr_anns.append(ann)
 

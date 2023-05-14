@@ -166,7 +166,7 @@ class SamPredictor:
         )
 
         if return_objects_embeddings:
-            masks, iou_predictions, low_res_masks, objects_embeddings = predict_torch_outputs
+            masks, iou_predictions, low_res_masks, objects_embeddings, iou_embedding = predict_torch_outputs
         else:
             masks, iou_predictions, low_res_masks = predict_torch_outputs
 
@@ -176,7 +176,8 @@ class SamPredictor:
 
         if return_objects_embeddings:
             objects_embeddings = objects_embeddings[0].detach().cpu().numpy()
-            return masks_np, iou_predictions_np, low_res_masks_np, objects_embeddings
+            iou_embedding = iou_embedding[0].detach().cpu().numpy()
+            return masks_np, iou_predictions_np, low_res_masks_np, objects_embeddings, iou_embedding
         
         return masks_np, iou_predictions_np, low_res_masks_np
 
@@ -254,7 +255,7 @@ class SamPredictor:
         )
 
         if return_objects_embeddings:
-          low_res_masks, iou_predictions, objects_embeddings = mask_decoder_outputs
+          low_res_masks, iou_predictions, objects_embeddings, iou_embedding = mask_decoder_outputs
         else:
           low_res_masks, iou_predictions = mask_decoder_outputs
 
@@ -265,7 +266,7 @@ class SamPredictor:
             masks = masks > self.model.mask_threshold
 
         if return_objects_embeddings:
-          return masks, iou_predictions, low_res_masks, objects_embeddings
+          return masks, iou_predictions, low_res_masks, objects_embeddings, iou_embedding
 
         return masks, iou_predictions, low_res_masks
 

@@ -190,6 +190,7 @@ class SamAutomaticMaskGenerator:
                 "stability_score": mask_data["stability_score"][idx].item(),
                 "crop_box": box_xyxy_to_xywh(mask_data["crop_boxes"][idx]).tolist(),
                 "object_embedding": mask_data["objects_embeddings"][idx],
+                "image_embedding": self.input_image_encoder_embeddings.cpu().numpy()[0],
             }
             curr_anns.append(ann)
 
@@ -203,6 +204,7 @@ class SamAutomaticMaskGenerator:
 
         # Iterate over image crops
         data = MaskData()
+        print(f"num crop boxes = {len(crop_boxes)}")
         for crop_box, layer_idx in zip(crop_boxes, layer_idxs):
             crop_data = self._process_crop(image, crop_box, layer_idx, orig_size)
             data.cat(crop_data)
@@ -235,6 +237,8 @@ class SamAutomaticMaskGenerator:
         cropped_im = image[y0:y1, x0:x1, :]
         cropped_im_size = cropped_im.shape[:2]
         self.predictor.set_image(cropped_im)
+
+        self.input_image_encoder_embeddings = self.predictor.torch.clone(get_image_embedding())
 
         # Get points for this crop
         points_scale = np.array(cropped_im_size)[None, ::-1]

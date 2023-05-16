@@ -190,7 +190,6 @@ class SamAutomaticMaskGenerator:
                 "stability_score": mask_data["stability_score"][idx].item(),
                 "crop_box": box_xyxy_to_xywh(mask_data["crop_boxes"][idx]).tolist(),
                 "object_embedding": mask_data["objects_embeddings"][idx],
-                "iou_embedding": mask_data["iou_embedding"][idx]
             }
             curr_anns.append(ann)
 
@@ -292,7 +291,6 @@ class SamAutomaticMaskGenerator:
             iou_preds=iou_preds.flatten(0, 1),
             points=torch.as_tensor(points.repeat(masks.shape[1], axis=0)),
             objects_embeddings=objects_embeddings.flatten(0, 1),
-            iou_embedding=iou_embedding,
         )
         del masks
 

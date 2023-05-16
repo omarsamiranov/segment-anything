@@ -285,11 +285,6 @@ class SamAutomaticMaskGenerator:
             return_logits=True,
             return_objects_embeddings=True,
         )
-        print(objects_embeddings.shape)
-        print(objects_embeddings.flatten(0, 1).shape)
-
-        print(iou_embedding.shape)
-        print(iou_embedding.flatten(0, 1).shape)
 
         # Serialize predictions and store in MaskData
         data = MaskData(
@@ -297,7 +292,7 @@ class SamAutomaticMaskGenerator:
             iou_preds=iou_preds.flatten(0, 1),
             points=torch.as_tensor(points.repeat(masks.shape[1], axis=0)),
             objects_embeddings=objects_embeddings.flatten(0, 1),
-            iou_embedding=iou_embedding.flatten(0, 1),
+            iou_embedding=iou_embedding,
         )
         del masks
 

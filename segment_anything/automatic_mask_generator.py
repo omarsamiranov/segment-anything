@@ -238,7 +238,7 @@ class SamAutomaticMaskGenerator:
         cropped_im_size = cropped_im.shape[:2]
         self.predictor.set_image(cropped_im)
 
-        self.input_image_encoder_embeddings = self.predictor.torch.clone(get_image_embedding())
+        self.input_image_encoder_embeddings = torch.clone(self.predictor.get_image_embedding())
 
         # Get points for this crop
         points_scale = np.array(cropped_im_size)[None, ::-1]

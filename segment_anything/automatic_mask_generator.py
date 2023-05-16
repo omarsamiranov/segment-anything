@@ -285,6 +285,11 @@ class SamAutomaticMaskGenerator:
             return_logits=True,
             return_objects_embeddings=True,
         )
+        print(objects_embeddings.shape)
+        print(objects_embeddings.flatten(0, 1).shape)
+
+        print(iou_embedding.shape)
+        print(iou_embedding.flatten(0, 1).shape)
 
         # Serialize predictions and store in MaskData
         data = MaskData(

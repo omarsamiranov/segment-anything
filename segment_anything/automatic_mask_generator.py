@@ -204,7 +204,6 @@ class SamAutomaticMaskGenerator:
 
         # Iterate over image crops
         data = MaskData()
-        print(f"num crop boxes = {len(crop_boxes)}")
         for crop_box, layer_idx in zip(crop_boxes, layer_idxs):
             crop_data = self._process_crop(image, crop_box, layer_idx, orig_size)
             data.cat(crop_data)
